@@ -1,26 +1,41 @@
 {
   "manifest_version": 3,
   "name": "NetSuite Field Explorer",
-  "description": "Examine the fields in a Netsuite record",
-  "author": "Michoel Chaikin <micholi@gmail.com>",
+  "description": "Examine the fields in a Netsuite record (Firefox port of the Chrome extension by Michoel Chaikin)",
+  "author": "Original: Michoel Chaikin <micholi@gmail.com>, Firefox port: Zackery Bellerose",
   "homepage_url": "https://github.com/michoelchaikin/netsuite-field-explorer",
   "version": "1.0.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "netsuite-field-explorer@zackerybellerose.github.io",
+      "strict_min_version": "57.0"
+    }
+  },
   "icons": {
     "16": "img/icon16.png",
     "48": "img/icon48.png",
     "128": "img/icon128.png"
   },
   "background": {
-    "service_worker": "service_worker.js"
+    "scripts": ["service_worker.js"],
+    "type": "module"
   },
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+E"
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
       }
     }
   },
-  "permissions": ["activeTab", "declarativeContent"],
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.netsuite.com/*"
+  ],
   "action": {
     "default_title": "NetSuite Field Explorer",
     "default_popup": "popup.html",
@@ -30,5 +45,7 @@
       "32": "img/icon32.png"
     }
   },
-  "content_security_policy": {}
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

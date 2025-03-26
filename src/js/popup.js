@@ -3,13 +3,26 @@
 let record = null;
 
 chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
-  const response = await fetch(`${tab.url}&xml=T`);
-  const data = await response.text();
-
-  const parsedRecord = parseRecord(data);
-  record = formatRecord(parsedRecord);
-  renderRecord();
-  updateLinks();
+  try {
+    // Request XML data through the background script
+    const response = await browser.runtime.sendMessage({
+      type: 'FETCH_XML',
+      url: tab.url
+    });
+    
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+    
+    const parsedRecord = parseRecord(response.data);
+    record = formatRecord(parsedRecord);
+    renderRecord();
+    updateLinks();
+  } catch (error) {
+    console.error('Error fetching record:', error);
+    const container = document.getElementById("container");
+    container.innerHTML = `Error!<br/><br>${error.message}<br/><br>Please make sure you're logged into NetSuite and viewing a valid record page.`;
+  }
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -25,9 +38,33 @@ document.addEventListener("DOMContentLoaded", function () {
  * @return {object} The parsed JSON object
  */
 function parseRecord(recordXML) {
-  // remove the <?xml ... ?> header
-  const xml = recordXML.substring(39);
-  return new X2JS().xml_str2json(xml);
+  try {
+    // Ensure we have valid XML
+    if (!recordXML.includes('<?xml')) {
+      throw new Error('Invalid XML response');
+    }
+    
+    // Parse the XML using X2JS
+    const x2js = new X2JS({
+      attributePrefix: '_',
+      arrayNodeName: 'item',
+      ignoreAttributes: false,
+      ignoreNameSpace: true,
+      parseAttributeValue: true,
+      parseTagValue: true,
+      parseNodeValue: true,
+      trimValues: true,
+      cdataTagName: '__cdata',
+      parseBoolean: true,
+      parseNumbers: true,
+      emptyNodeValue: ''
+    });
+    
+    return x2js.xml_str2json(recordXML);
+  } catch (error) {
+    console.error('Error parsing XML:', error);
+    throw new Error('Failed to parse XML response');
+  }
 }
 
 /**
